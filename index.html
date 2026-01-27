@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Enterprise Password Security Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --weak: #ef4444;
+  --medium: #f59e0b;
+  --strong: #22c55e;
+}
+
+[data-theme="dark"] {
+  --bg: #05081a;
+  --card: #0b1230;
+  --text: #ffffff;
+  --muted: #9aa7d6;
+  --primary: #0b57ff;
+  --weak: #ff4d6d;
+  --medium: #ffcc4a;
+  --strong: #28d17c;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  transition: background 0.3s ease;
+}
+
+.dashboard {
+  width: 960px;
+  max-width: 95%;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  color: var(--text);
+  text-shadow: 0 0 8px rgba(0,0,0,0.3);
+}
+
+.toggle-theme {
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.field {
+  display: flex;
+  gap: 10px;
+  background: rgba(0,0,0,0.05);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 18px;
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  padding: 10px 14px;
+  background: var(--primary);
+  color: white;
+}
+
+.meter {
+  margin-top: 12px;
+}
+
+.bar {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--weak), var(--medium), var(--strong));
+  transition: width 0.3s ease;
+}
+
+.rules {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.rules div {
+  color: var(--muted);
+}
+
+.rules .ok {
+  color: var(--strong);
+}
+
+.faceBox {
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.15);
+  display: grid;
+  place-items: center;
+  padding: 10px;
+}
+
+svg {
+  width: 100%;
+  height: 240px;
+}
+</style>
+</head>
+
+<body>
+<div class="dashboard" id="app">
+  <div class="header">
+    <h2>Password Security Dashboard</h2>
+    <button class="toggle-theme" id="themeBtn">Toggle Theme</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="field">
+        <input type="password" id="pwd" placeholder="Enter password">
+        <button id="toggle">👁</button>
+      </div>
+
+      <button id="gen" style="margin-top:10px;">Generate Strong Password</button>
+
+      <div class="meter">
+        <div class="bar"><div class="fill" id="fill"></div></div>
+        <div id="status">—</div>
+      </div>
+
+      <div class="rules">
+        <div id="rlen">• Minimum 8 characters</div>
+        <div id="rlow">• Lowercase letter</div>
+        <div id="rup">• Uppercase letter</div>
+        <div id="rnum">• Number</div>
+        <div id="rsym">• Special character</div>
+      </div>
+    </div>
+
+    <div class="faceBox">
+      <svg viewBox="0 0 200 200">
+        <!-- Face -->
+        <circle cx="100" cy="110" r="60" fill="#f3c7a6"/>
+        <!-- Eyes -->
+        <ellipse id="eyeL" cx="80" cy="95" rx="8" ry="6" fill="#000"/>
+        <ellipse id="eyeR" cx="120" cy="95" rx="8" ry="6" fill="#000"/>
+        <!-- Eyebrows -->
+        <path d="M65 80 Q80 70 95 80" stroke="#000" stroke-width="3" fill="none"/>
+        <path d="M105 80 Q120 70 135 80" stroke="#000" stroke-width="3" fill="none"/>
+        <!-- Mouth -->
+        <path id="mouth" d="M70 135 Q100 145 130 135" stroke="#000" stroke-width="4" fill="none"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+const app = document.getElementById("app");
+const themeBtn = document.getElementById("themeBtn");
+let dark = false;
+
+themeBtn.onclick = () => {
+  dark = !dark;
+  app.setAttribute("data-theme", dark ? "dark" : "");
+};
+
+const pwd = document.getElementById("pwd");
+const fill = document.getElementById("fill");
+const status = document.getElementById("status");
+const mouth = document.getElementById("mouth");
+const eyeL = document.getElementById("eyeL");
+const eyeR = document.getElementById("eyeR");
+
+const rulesEl = {
+  len: document.getElementById("rlen"),
+  low: document.getElementById("rlow"),
+  up: document.getElementById("rup"),
+  num: document.getElementById("rnum"),
+  sym: document.getElementById("rsym")
+};
+
+function checkRules(v){
+  return {
+    len: v.length >= 8,
+    low: /[a-z]/.test(v),
+    up: /[A-Z]/.test(v),
+    num: /[0-9]/.test(v),
+    sym: /[^A-Za-z0-9]/.test(v)
+  };
+}
+
+function score(r){
+  return Object.values(r).filter(Boolean).length;
+}
+
+function updateUI(){
+  const v = pwd.value;
+  const r = checkRules(v);
+  const s = score(r);
+
+  fill.style.width = (s/5)*100 + "%";
+
+  Object.keys(rulesEl).forEach(k => {
+    rulesEl[k].classList.toggle("ok", r[k]);
+  });
+
+  if(v.length === 0){
+    status.textContent = "—";
+    mouth.setAttribute("d", "M70 135 Q100 145 130 135");
+  } else if(s <= 2){
+    status.textContent = "Weak";
+    mouth.setAttribute("d", "M70 145 Q100 130 130 145");
+  } else if(s <= 4){
+    status.textContent = "Medium";
+    mouth.setAttribute("d", "M70 138 Q100 148 130 138");
+  } else {
+    status.textContent = "Strong";
+    mouth.setAttribute("d", "M65 132 Q100 160 135 132");
+  }
+}
+
+pwd.addEventListener("input", updateUI);
+
+document.getElementById("toggle").onclick = () => {
+  pwd.type = pwd.type === "password" ? "text" : "password";
+};
+
+document.getElementById("gen").onclick = () => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+  let out = "";
+  for(let i=0;i<14;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  pwd.value = out;
+  updateUI();
+};
+
+window.addEventListener("mousemove", e => {
+  const rect = document.querySelector("svg").getBoundingClientRect();
+  const dx = (e.clientX - (rect.left + rect.width/2)) / (rect.width/2);
+  eyeL.setAttribute("cx", 80 + dx * 4);
+  eyeR.setAttribute("cx", 120 + dx * 4);
+});
+</script>
+</body>
+</html>
