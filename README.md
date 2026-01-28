@@ -25,8 +25,6 @@ A professional, interactive web application that evaluates password strength in 
 
 ## 📂 Project Structure
 
-## 📂 Project Structure
-
 password-security-dashboard
 ├── index.html
 └── README.md
